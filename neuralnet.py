@@ -52,28 +52,76 @@ for x, val in enumerate(dataset["Lidar"]):
         continue
     lidar_line_data = dataset["Lidar"][x]
     converted_lidar_data = lidar_line_data.replace("[", "").replace("]", "").split(",")
+    converted_lidar_data.insert(0, dataset["Steer"][x])
     data.append(np.array(converted_lidar_data).astype(np.float))
 
+# graph_points(data[0])
 
-# print(data)
-# graph_points(data)
+dataframe = pd.DataFrame(data)
 
-# train_dataset = dataset.sample(frac=0.8, random_state=0)
-# test_dataset = dataset.drop(train_dataset.index)
+train_dataset = dataframe.sample(frac=0.8, random_state=0)
+test_dataset = dataframe.drop(train_dataset.index)
 
-# train_features = train_dataset.copy()
-# test_features = test_dataset.copy()
 
-# train_labels = train_features.pop('Steer')
-# test_labels = test_features.pop('Steer')
+train_features = train_dataset.copy()
+test_features = test_dataset.copy()
 
-# normalizer = preprocessing.Normalization()
-# normalizer.adapt(np.array(train_features))
-# print(normalizer.mean.numpy())
+train_labels = train_features.pop(0)
+test_labels = test_features.pop(0)
 
-# first = np.array(train_features[:1])
+#print(train_labels)
+
+normalizer = preprocessing.Normalization()
+# TODO: Do we need normalization?
+
+normalizer.adapt(np.array(train_features))
+print(normalizer.mean.numpy())
 
 # with np.printoptions(precision=2, suppress=True):
 #   print('First example:', first)
 #   print()
 #   print('Normalized:', normalizer(first).numpy())
+
+def build_and_compile_model(norm):
+  model = keras.Sequential([
+      norm,
+      layers.Dense(64, activation='relu'),
+      layers.Dense(64, activation='relu'),
+      layers.Dense(1)
+  ])
+
+  model.compile(loss='mean_absolute_error',
+                optimizer=tf.keras.optimizers.Adam(0.001))
+  return model
+
+dnn_model = build_and_compile_model(normalizer)
+# print(dnn_model.summary())
+
+history = dnn_model.fit(
+    train_features, train_labels,
+    validation_split=0.2,
+    verbose=0, epochs=100)
+
+def plot_loss(history):
+  plt.plot(history.history['loss'], label='loss')
+  plt.plot(history.history['val_loss'], label='val_loss')
+  plt.ylim([0, 1])
+  plt.xlabel('Epoch')
+  plt.ylabel('Error [MPG]')
+  plt.legend()
+  plt.grid(True)
+  plt.savefig("loss_plot.png")
+
+plot_loss(history)
+
+test_predictions = dnn_model.predict(test_features).flatten()
+
+a = plt.axes(aspect='equal')
+plt.scatter(test_labels, test_predictions)
+plt.xlabel('True Values [Steer]')
+plt.ylabel('Predictions [Steer]')
+lims = [0, .1]
+plt.xlim(lims)
+plt.ylim(lims)
+_ = plt.plot(lims, lims)
+plt.savefig("predict_plot.png")
