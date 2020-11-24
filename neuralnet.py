@@ -37,7 +37,7 @@ def graph_points(lidar_data):
     #print("plot saved")
 
 column_names = ['Number', 'Time', 'Lidar', 'Steer']
-path = "./lidar_data.csv"
+path = "./7000_scans.csv"
 raw_dataset = pd.read_csv(path, names=column_names)
 
 dataset = raw_dataset.copy()
