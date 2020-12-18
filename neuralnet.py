@@ -37,7 +37,7 @@ def graph_points(lidar_data):
     #print("plot saved")
 
 column_names = ['Number', 'Time', 'Lidar', 'Steer']
-path = "./7000_scans.csv"
+path = "./michael_map_data.csv"
 raw_dataset = pd.read_csv(path, names=column_names)
 
 dataset = raw_dataset.copy()
@@ -55,6 +55,8 @@ for x, val in enumerate(dataset["Lidar"]):
     converted_lidar_data.insert(0, dataset["Steer"][x])
     data.append(np.array(converted_lidar_data).astype(np.float))
 
+# print(data[0])
+
 # graph_points(data[0])
 
 dataframe = pd.DataFrame(data)
@@ -69,13 +71,13 @@ test_features = test_dataset.copy()
 train_labels = train_features.pop(0)
 test_labels = test_features.pop(0)
 
-#print(train_labels)
+# print(train_labels)
 
 normalizer = preprocessing.Normalization()
 # TODO: Do we need normalization?
 
 normalizer.adapt(np.array(train_features))
-print(normalizer.mean.numpy())
+# print(normalizer.mean.numpy())
 
 # with np.printoptions(precision=2, suppress=True):
 #   print('First example:', first)
@@ -105,12 +107,13 @@ history = dnn_model.fit(
 def plot_loss(history):
   plt.plot(history.history['loss'], label='loss')
   plt.plot(history.history['val_loss'], label='val_loss')
-  plt.ylim([0, 1])
+  plt.ylim([0, 10])
   plt.xlabel('Epoch')
   plt.ylabel('Error [MPG]')
   plt.legend()
   plt.grid(True)
   plt.savefig("loss_plot.png")
+
 
 plot_loss(history)
 
@@ -125,3 +128,4 @@ plt.xlim(lims)
 plt.ylim(lims)
 _ = plt.plot(lims, lims)
 plt.savefig("predict_plot.png")
+
