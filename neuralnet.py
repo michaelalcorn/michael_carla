@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
+import datetime
 # Make numpy printouts easier to read.
 np.set_printoptions(precision=3, suppress=True)
 
@@ -15,6 +15,9 @@ from tensorflow.keras.layers.experimental import preprocessing
 from numpy import loadtxt
 
 # print(tf.__version__)
+
+# graph point function that plots to cart_plot.png
+# in order to use, must comment out steer insertion of data 
 
 def graph_points(lidar_data):
 
@@ -36,8 +39,13 @@ def graph_points(lidar_data):
     plt.clf()
     #print("plot saved")
 
+
 column_names = ['Number', 'Time', 'Lidar', 'Steer']
+# path = "./7000_scans.csv"
 path = "./michael_map_data.csv"
+# path = "./intersection_tet.csv"
+# path = "./combined_data.csv"
+
 raw_dataset = pd.read_csv(path, names=column_names)
 
 dataset = raw_dataset.copy()
@@ -46,6 +54,7 @@ dataset = dataset[["Lidar", "Steer"]]
 
 data = []
 
+# data is in form steer then lidar
 
 for x, val in enumerate(dataset["Lidar"]):
     if x == 0:
@@ -58,6 +67,8 @@ for x, val in enumerate(dataset["Lidar"]):
 # print(data[0])
 
 # graph_points(data[0])
+
+# print(data)
 
 dataframe = pd.DataFrame(data)
 
@@ -93,16 +104,25 @@ def build_and_compile_model(norm):
   ])
 
   model.compile(loss='mean_absolute_error',
-                optimizer=tf.keras.optimizers.Adam(0.001))
+                optimizer=tf.keras.optimizers.Adam(0.0001))
   return model
 
 dnn_model = build_and_compile_model(normalizer)
-# print(dnn_model.summary())
+
+print(dnn_model.summary())
+
+log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+# tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 history = dnn_model.fit(
     train_features, train_labels,
     validation_split=0.2,
-    verbose=0, epochs=100)
+    verbose=0, epochs=100) # callbacks=[tensorboard_callback])
+
+# with tf.Session() as sess:
+#   writer = tf.summary.FileWriter("logs/graph/", sess.graph)
+
+print(dnn_model.predict(train_features[:10]))
 
 def plot_loss(history):
   plt.plot(history.history['loss'], label='loss')
@@ -116,6 +136,7 @@ def plot_loss(history):
 
 
 plot_loss(history)
+print(history.history['loss'])
 
 test_predictions = dnn_model.predict(test_features).flatten()
 
@@ -128,4 +149,3 @@ plt.xlim(lims)
 plt.ylim(lims)
 _ = plt.plot(lims, lims)
 plt.savefig("predict_plot.png")
-
