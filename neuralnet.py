@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import datetime
+
 # Make numpy printouts easier to read.
 np.set_printoptions(precision=3, suppress=True)
 
@@ -13,6 +14,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.layers.experimental import preprocessing
 
 from numpy import loadtxt
+from tensorflow.python import debug as tf_debug
 
 # print(tf.__version__)
 
@@ -65,12 +67,15 @@ for x, val in enumerate(dataset["Lidar"]):
     data.append(np.array(converted_lidar_data).astype(np.float))
 
 # print(data[0])
-
 # graph_points(data[0])
 
 # print(data)
+# data = data[30:60]
 
 dataframe = pd.DataFrame(data)
+
+# Drop NA values in data (caused original error)
+dataframe = dataframe.dropna()
 
 train_dataset = dataframe.sample(frac=0.8, random_state=0)
 test_dataset = dataframe.drop(train_dataset.index)
@@ -122,14 +127,14 @@ history = dnn_model.fit(
 # with tf.Session() as sess:
 #   writer = tf.summary.FileWriter("logs/graph/", sess.graph)
 
-print(dnn_model.predict(train_features[:10]))
+# print(dnn_model.predict(train_features[:10]))
 
 def plot_loss(history):
   plt.plot(history.history['loss'], label='loss')
   plt.plot(history.history['val_loss'], label='val_loss')
-  plt.ylim([0, 10])
+  plt.ylim([0,.3])
   plt.xlabel('Epoch')
-  plt.ylabel('Error [MPG]')
+  plt.ylabel('Error [Steer]')
   plt.legend()
   plt.grid(True)
   plt.savefig("loss_plot.png")
@@ -137,8 +142,10 @@ def plot_loss(history):
 
 plot_loss(history)
 print(history.history['loss'])
-
+print("TEST FEATURES")
+print(test_features)
 test_predictions = dnn_model.predict(test_features).flatten()
+dnn_model.save('model')
 
 a = plt.axes(aspect='equal')
 plt.scatter(test_labels, test_predictions)
